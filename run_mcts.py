@@ -7,7 +7,7 @@ from hf_mcts import HF_MCTS, MCTSConfig
 
 # ================= 配置区 =================
 BASE_MODEL_PATH = "/root/autodl-tmp/models/Qwen3-0.6B-Base"
-LORA_PATH = "/root/autodl-tmp/checkpoints/qwen_sft_use_tool/final_lora"
+LORA_PATH = "/root/autodl-tmp/checkpoints/qwen_sft_use_tool——v2/final_lora"
 
 def main():
     print("============== 认知纳米 (Cognitive Nano) MCTS 测试引擎 ==============")
@@ -38,23 +38,24 @@ def main():
 
     question = "A factory produces 1250 gadgets per day. They operate for 24 days a month. If each gadget is sold for $15 and the monthly operating cost is $120,500, what is the exact net profit for the month?"
     
-    # 🔥 真正纯净的 Prompt，给它留白，让它自己开始思考！
-    raw_prompt = f"""<|im_start|>system
-You are a math genius. You MUST use the python sandbox for calculations by writing pure python expressions (like 2+2) between <|python_start|> and <|python_end|>.<|im_end|>
-<|im_start|>user
-What is 15 multiplied by 8?<|im_end|>
-<|im_start|>assistant
-<think>
-To find the product of 15 and 8, I will use the python sandbox.
-<|python_start|>15 * 8<|python_end|><|output_start|>120<|output_end|>
-The result is 120.
-</think>
+    # 🔥 100% 对齐 SFT 训练格式的 One-Shot 模板
+    messages = [
+        {"role": "system", "content": "You are a meticulous math genius. You solve problems step-by-step."},
+        {"role": "user", "content": "What is 15 multiplied by 8?"},
+        {"role": "assistant", "content": "<think>\nWe need to compute the product of 15 and 8.\nLet's compute.\n<|python_start|>15 * 8<|python_end|>\n<|output_start|>120<|output_end|>\nSo 15 * 8 = 120.\nThus final answer: 120.\n</think>\n\nThe final answer is 120"},
+        {"role": "user", "content": question}
+    ]
 
-\\The final answer is 120<|im_end|>
-<|im_start|>user
-{question}<|im_end|>
-<|im_start|>assistant
-<think>\n"""
+    # 使用官方模板引擎组装，绝不差一个空格
+    raw_prompt = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+    
+    # 引导模型进入思考空间
+    raw_prompt += "<think>\n"
+
 
     print(f"\n[问题]: {question}")
     print(f"[配置]: 预算={config.num_simulations}次模拟 | 分支度={config.branching_factor}\n")

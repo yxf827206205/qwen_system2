@@ -223,7 +223,7 @@ class HF_MCTS:
                 # After min tokens, stop at a double-newline (end of reasoning step)
                 if step_count >= cfg.min_chunk_tokens and consecutive_newlines >= 2:
                     break
-
+                current_id = torch.argmax(next_logits, dim=-1).item()
             child_text = self.tokenizer.decode(child_tokens, skip_special_tokens=False)
 
             # Sandbox injection when the model has emitted a complete Python block
