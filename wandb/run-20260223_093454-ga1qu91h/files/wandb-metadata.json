@@ -1,0 +1,36 @@
+{
+  "os": "Linux-5.15.0-78-generic-x86_64-with-glibc2.35",
+  "python": "CPython 3.12.3",
+  "startedAt": "2026-02-23T01:34:54.886483Z",
+  "program": "/root/autodl-tmp/qwen/sft_qwen.py",
+  "codePath": "sft_qwen.py",
+  "codePathLocal": "sft_qwen.py",
+  "email": "yxf827206205@163.com",
+  "root": "/root/autodl-tmp/qwen",
+  "host": "autodl-container-pkzaz5b57z-90d5c4f3",
+  "executable": "/root/miniconda3/bin/python",
+  "cpu_count": 64,
+  "cpu_count_logical": 128,
+  "gpu": "NVIDIA GeForce RTX 4090 D",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "32212254720",
+      "used": "18964480000"
+    }
+  },
+  "memory": {
+    "total": "540638674944"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce RTX 4090 D",
+      "memoryTotal": "25757220864",
+      "cudaCores": 14592,
+      "architecture": "Ada",
+      "uuid": "GPU-f9dfaf6e-69fc-ee80-f429-a430d31ab473"
+    }
+  ],
+  "cudaVersion": "13.0",
+  "writerId": "uyow4gmhtk1rief0fgasyfswzz4wkexj"
+}

@@ -1,0 +1,23 @@
+1. Tokenizer
+2. Model
+`torch_dtype` is deprecated! Use `dtype` instead!
+3. LoRA
+/root/miniconda3/lib/python3.12/site-packages/peft/tuners/tuners_utils.py:1225: UserWarning: Model has `tie_word_embeddings=True` and a tied layer is part of the adapter, but `ensure_weight_tying` is not set to True. This can lead to complications, for example when merging the adapter or converting your model to formats other than safetensors. Check the discussion here: https://github.com/huggingface/peft/issues/2777
+  warnings.warn(msg)
+trainable params: 330,811,392 || all params: 926,592,000 || trainable%: 35.7019
+4. Dataset
+Generating train split: 2000 examples [00:00, 58081.59 examples/s]
+general size: 2000
+Generating train split: 7465 examples [00:00, 374554.15 examples/s]
+math1 size: 7465
+Generating train split: 2061 examples [00:00, 131835.60 examples/s]
+math2 size: 2061
+Total dataset size: 11526
+5. TrainingArguments
+Traceback (most recent call last):
+  File "/root/autodl-tmp/qwen/sft_qwen.py", line 185, in <module>
+    main()
+  File "/root/autodl-tmp/qwen/sft_qwen.py", line 155, in main
+    trainer = SFTTrainer(
+              ^^^^^^^^^^^
+TypeError: SFTTrainer.__init__() got an unexpected keyword argument 'max_seq_length'

@@ -1,0 +1,37 @@
+1. Tokenizer
+2. Model
+`torch_dtype` is deprecated! Use `dtype` instead!
+3. LoRA
+/root/miniconda3/lib/python3.12/site-packages/peft/tuners/tuners_utils.py:1225: UserWarning: Model has `tie_word_embeddings=True` and a tied layer is part of the adapter, but `ensure_weight_tying` is not set to True. This can lead to complications, for example when merging the adapter or converting your model to formats other than safetensors. Check the discussion here: https://github.com/huggingface/peft/issues/2777
+  warnings.warn(msg)
+trainable params: 330,811,392 || all params: 926,592,000 || trainable%: 35.7019
+4. Dataset
+Traceback (most recent call last):
+  File "/root/autodl-tmp/qwen/sft_qwen.py", line 186, in <module>
+    main()
+  File "/root/autodl-tmp/qwen/sft_qwen.py", line 107, in main
+    dataset = load_and_mix_datasets()
+              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/autodl-tmp/qwen/sft_qwen.py", line 35, in load_and_mix_datasets
+    ds = load_dataset("json", data_files=path, split="train")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/datasets/load.py", line 2129, in load_dataset
+    builder_instance = load_dataset_builder(
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/datasets/load.py", line 1849, in load_dataset_builder
+    dataset_module = dataset_module_factory(
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/datasets/load.py", line 1564, in dataset_module_factory
+    ).get_module()
+      ^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/datasets/load.py", line 944, in get_module
+    data_files = DataFilesDict.from_patterns(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/datasets/data_files.py", line 721, in from_patterns
+    else DataFilesList.from_patterns(
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/miniconda3/lib/python3.12/site-packages/datasets/data_files.py", line 624, in from_patterns
+    resolve_pattern(
+  File "/root/miniconda3/lib/python3.12/site-packages/datasets/data_files.py", line 411, in resolve_pattern
+    raise FileNotFoundError(error_msg)
+FileNotFoundError: Unable to find '/root/autodl-tmp/qwen/autodl-tmp/data/cold_start_lite_tool_use.jsonl'

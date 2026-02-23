@@ -1,0 +1,67 @@
+_wandb:
+    value:
+        cli_version: 0.24.2
+        e:
+            g91zf82on9ifsy1if29s0qzu7mhg2hw1:
+                codePath: sft_qwen.py
+                codePathLocal: sft_qwen.py
+                cpu_count: 64
+                cpu_count_logical: 128
+                cudaVersion: "13.0"
+                disk:
+                    /:
+                        total: "32212254720"
+                        used: "18965094400"
+                email: yxf827206205@163.com
+                executable: /root/miniconda3/bin/python
+                gpu: NVIDIA GeForce RTX 4090 D
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ada
+                      cudaCores: 14592
+                      memoryTotal: "25757220864"
+                      name: NVIDIA GeForce RTX 4090 D
+                      uuid: GPU-f52b311f-e39b-50fc-86ae-9b1904ab2915
+                host: autodl-container-pkzaz5b57z-90d5c4f3
+                memory:
+                    total: "540638674944"
+                os: Linux-5.15.0-78-generic-x86_64-with-glibc2.35
+                program: /root/autodl-tmp/qwen/sft_qwen.py
+                python: CPython 3.12.3
+                root: /root/autodl-tmp/qwen
+                startedAt: "2026-02-22T13:25:55.535606Z"
+                writerId: g91zf82on9ifsy1if29s0qzu7mhg2hw1
+        m: []
+        python_version: 3.12.3
+        t:
+            "1":
+                - 1
+                - 5
+                - 11
+                - 41
+                - 49
+                - 51
+                - 53
+                - 71
+                - 84
+                - 98
+                - 105
+            "2":
+                - 1
+                - 5
+                - 11
+                - 41
+                - 49
+                - 51
+                - 53
+                - 71
+                - 84
+                - 98
+                - 105
+            "3":
+                - 13
+            "4": 3.12.3
+            "5": 0.24.2
+            "6": 4.57.1
+            "12": 0.24.2
+            "13": linux-x86_64

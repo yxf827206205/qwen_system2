@@ -1,0 +1,79 @@
+1. Tokenizer
+2. Model
+`torch_dtype` is deprecated! Use `dtype` instead!
+3. LoRA
+/root/miniconda3/lib/python3.12/site-packages/peft/tuners/tuners_utils.py:1225: UserWarning: Model has `tie_word_embeddings=True` and a tied layer is part of the adapter, but `ensure_weight_tying` is not set to True. This can lead to complications, for example when merging the adapter or converting your model to formats other than safetensors. Check the discussion here: https://github.com/huggingface/peft/issues/2777
+  warnings.warn(msg)
+trainable params: 330,811,392 || all params: 926,592,000 || trainable%: 35.7019
+4. Dataset 预处理
+general size: 2000
+math1 size: 7465
+math2 size: 2061
+Total dataset size: 11526
+正在应用 Chat Template 预处理数据...
+5. SFTConfig
+The model is already on multiple devices. Skipping the move to device specified in `args`.
+=== Training ===
+The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'bos_token_id': None, 'pad_token_id': 151643}.
+ 39%|██████████████████████████████████████████████████████▌                                                                                      | 200/517 [03:59<06:25,  1.21s/it]/root/miniconda3/lib/python3.12/site-packages/peft/utils/save_and_load.py:309: UserWarning: Setting `save_embedding_layers` to `True` as the embedding layer has been resized during finetuning.
+{'loss': 1.1207, 'grad_norm': 1.6979687213897705, 'learning_rate': 3.461538461538462e-05, 'entropy': 0.9508706241846084, 'num_tokens': 80039.0, 'mean_token_accuracy': 0.782975509762764, 'epoch': 0.02}
+{'loss': 0.9325, 'grad_norm': 1.703371286392212, 'learning_rate': 7.307692307692307e-05, 'entropy': 1.0146949380636214, 'num_tokens': 159887.0, 'mean_token_accuracy': 0.7960974693298339, 'epoch': 0.04}
+{'loss': 0.6341, 'grad_norm': 1.2946690320968628, 'learning_rate': 9.999078901776819e-05, 'entropy': 0.7053371548652649, 'num_tokens': 240136.0, 'mean_token_accuracy': 0.8368657201528549, 'epoch': 0.06}
+{'loss': 0.4907, 'grad_norm': 1.0838679075241089, 'learning_rate': 9.982713261416492e-05, 'entropy': 0.538476774096489, 'num_tokens': 320871.0, 'mean_token_accuracy': 0.8604715704917908, 'epoch': 0.08}
+{'loss': 0.4569, 'grad_norm': 1.0049641132354736, 'learning_rate': 9.945955871495283e-05, 'entropy': 0.4726011842489243, 'num_tokens': 401626.0, 'mean_token_accuracy': 0.8662174195051193, 'epoch': 0.1}
+{'loss': 0.4607, 'grad_norm': 1.004033088684082, 'learning_rate': 9.888957161598532e-05, 'entropy': 0.4856951221823692, 'num_tokens': 481984.0, 'mean_token_accuracy': 0.8677919894456864, 'epoch': 0.12}
+{'loss': 0.4726, 'grad_norm': 1.0742803812026978, 'learning_rate': 9.811950398895456e-05, 'entropy': 0.48179603815078736, 'num_tokens': 562155.0, 'mean_token_accuracy': 0.8622421562671662, 'epoch': 0.14}
+{'loss': 0.4636, 'grad_norm': 0.8561649918556213, 'learning_rate': 9.715250733493466e-05, 'entropy': 0.48171932995319366, 'num_tokens': 642381.0, 'mean_token_accuracy': 0.8655373901128769, 'epoch': 0.15}
+{'loss': 0.4392, 'grad_norm': 0.9640340805053711, 'learning_rate': 9.599253908686636e-05, 'entropy': 0.4572284922003746, 'num_tokens': 722112.0, 'mean_token_accuracy': 0.8692264050245285, 'epoch': 0.17}
+{'loss': 0.43, 'grad_norm': 0.9514148235321045, 'learning_rate': 9.464434641376625e-05, 'entropy': 0.44296091347932814, 'num_tokens': 802736.0, 'mean_token_accuracy': 0.8735068827867508, 'epoch': 0.19}
+{'loss': 0.4271, 'grad_norm': 0.819891095161438, 'learning_rate': 9.311344679294186e-05, 'entropy': 0.44080068320035937, 'num_tokens': 882892.0, 'mean_token_accuracy': 0.87363341152668, 'epoch': 0.21}
+{'loss': 0.4212, 'grad_norm': 0.8456833362579346, 'learning_rate': 9.140610542972063e-05, 'entropy': 0.4295889735221863, 'num_tokens': 963387.0, 'mean_token_accuracy': 0.8754637002944946, 'epoch': 0.23}
+{'loss': 0.4304, 'grad_norm': 0.7530110478401184, 'learning_rate': 8.952930961710285e-05, 'entropy': 0.44432741701602935, 'num_tokens': 1043386.0, 'mean_token_accuracy': 0.8722868651151657, 'epoch': 0.25}
+{'loss': 0.3967, 'grad_norm': 0.8474660515785217, 'learning_rate': 8.749074014027115e-05, 'entropy': 0.41064402014017104, 'num_tokens': 1123773.0, 'mean_token_accuracy': 0.8822435170412064, 'epoch': 0.27}
+{'loss': 0.3966, 'grad_norm': 0.8726969361305237, 'learning_rate': 8.529873984298418e-05, 'entropy': 0.40654137283563613, 'num_tokens': 1204092.0, 'mean_token_accuracy': 0.8823156505823135, 'epoch': 0.29}
+{'loss': 0.3899, 'grad_norm': 0.9768308997154236, 'learning_rate': 8.296227948449589e-05, 'entropy': 0.406595741212368, 'num_tokens': 1285051.0, 'mean_token_accuracy': 0.8825795888900757, 'epoch': 0.31}
+{'loss': 0.4287, 'grad_norm': 0.8669177293777466, 'learning_rate': 8.049092102673135e-05, 'entropy': 0.436276213824749, 'num_tokens': 1364477.0, 'mean_token_accuracy': 0.873021274805069, 'epoch': 0.33}
+{'loss': 0.4176, 'grad_norm': 0.8107970356941223, 'learning_rate': 7.789477850196614e-05, 'entropy': 0.4291245311498642, 'num_tokens': 1444966.0, 'mean_token_accuracy': 0.8762058973312378, 'epoch': 0.35}
+{'loss': 0.4008, 'grad_norm': 0.8843083381652832, 'learning_rate': 7.51844766211583e-05, 'entropy': 0.4170083239674568, 'num_tokens': 1525747.0, 'mean_token_accuracy': 0.879718005657196, 'epoch': 0.37}
+{'loss': 0.4154, 'grad_norm': 0.947579562664032, 'learning_rate': 7.237110729232825e-05, 'entropy': 0.4235887795686722, 'num_tokens': 1605844.0, 'mean_token_accuracy': 0.8776475548744201, 'epoch': 0.39}
+  warnings.warn(
+ 77%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████                                | 400/517 [08:04<02:20,  1.20s/it]/root/miniconda3/lib/python3.12/site-packages/peft/utils/save_and_load.py:309: UserWarning: Setting `save_embedding_layers` to `True` as the embedding layer has been resized during finetuning.
+{'loss': 0.3947, 'grad_norm': 0.8183176517486572, 'learning_rate': 6.946618422693521e-05, 'entropy': 0.4148466378450394, 'num_tokens': 1685896.0, 'mean_token_accuracy': 0.8827365338802338, 'epoch': 0.41}
+{'loss': 0.3941, 'grad_norm': 0.8423430919647217, 'learning_rate': 6.648159582002322e-05, 'entropy': 0.4116464450955391, 'num_tokens': 1765725.0, 'mean_token_accuracy': 0.8816698104143142, 'epoch': 0.43}
+{'loss': 0.4381, 'grad_norm': 0.8903687596321106, 'learning_rate': 6.342955649697523e-05, 'entropy': 0.4452670082449913, 'num_tokens': 1846427.0, 'mean_token_accuracy': 0.8699156165122985, 'epoch': 0.44}
+{'loss': 0.4001, 'grad_norm': 0.7729166150093079, 'learning_rate': 6.032255672598803e-05, 'entropy': 0.41500485837459566, 'num_tokens': 1927060.0, 'mean_token_accuracy': 0.8813692778348923, 'epoch': 0.46}
+{'loss': 0.4017, 'grad_norm': 0.7992170453071594, 'learning_rate': 5.717331190084243e-05, 'entropy': 0.41224771440029145, 'num_tokens': 2007192.0, 'mean_token_accuracy': 0.8800327807664872, 'epoch': 0.48}
+{'loss': 0.382, 'grad_norm': 0.8391256332397461, 'learning_rate': 5.399471030316554e-05, 'entropy': 0.3883641421794891, 'num_tokens': 2087871.0, 'mean_token_accuracy': 0.887968772649765, 'epoch': 0.5}
+{'loss': 0.3789, 'grad_norm': 0.7023468017578125, 'learning_rate': 5.079976035714976e-05, 'entropy': 0.3958469033241272, 'num_tokens': 2168403.0, 'mean_token_accuracy': 0.8868131548166275, 'epoch': 0.52}
+{'loss': 0.3731, 'grad_norm': 0.792493462562561, 'learning_rate': 4.760153739258843e-05, 'entropy': 0.39023340195417405, 'num_tokens': 2248591.0, 'mean_token_accuracy': 0.8895974189043045, 'epoch': 0.54}
+{'loss': 0.4073, 'grad_norm': 0.9048182964324951, 'learning_rate': 4.441313013410039e-05, 'entropy': 0.4287315562367439, 'num_tokens': 2328108.0, 'mean_token_accuracy': 0.8794820100069046, 'epoch': 0.56}
+{'loss': 0.4221, 'grad_norm': 1.0207016468048096, 'learning_rate': 4.1247587135536126e-05, 'entropy': 0.4302081987261772, 'num_tokens': 2408931.0, 'mean_token_accuracy': 0.8721667200326919, 'epoch': 0.58}
+{'loss': 0.3837, 'grad_norm': 0.7737647891044617, 'learning_rate': 3.811786337878284e-05, 'entropy': 0.40373271256685256, 'num_tokens': 2488395.0, 'mean_token_accuracy': 0.8862038552761078, 'epoch': 0.6}
+{'loss': 0.3762, 'grad_norm': 0.9480893611907959, 'learning_rate': 3.503676725551278e-05, 'entropy': 0.39083613604307177, 'num_tokens': 2569023.0, 'mean_token_accuracy': 0.8883349865674972, 'epoch': 0.62}
+{'loss': 0.3789, 'grad_norm': 0.9506158232688904, 'learning_rate': 3.2016908148851624e-05, 'entropy': 0.39857316166162493, 'num_tokens': 2649233.0, 'mean_token_accuracy': 0.8872789323329926, 'epoch': 0.64}
+{'loss': 0.3847, 'grad_norm': 0.8324775695800781, 'learning_rate': 2.9070644829489434e-05, 'entropy': 0.39567038118839265, 'num_tokens': 2728871.0, 'mean_token_accuracy': 0.8852974444627761, 'epoch': 0.66}
+{'loss': 0.407, 'grad_norm': 0.8796340823173523, 'learning_rate': 2.621003487742264e-05, 'entropy': 0.4161540299654007, 'num_tokens': 2809267.0, 'mean_token_accuracy': 0.8797609299421311, 'epoch': 0.68}
+{'loss': 0.4177, 'grad_norm': 0.6887719035148621, 'learning_rate': 2.3446785336318754e-05, 'entropy': 0.4326538026332855, 'num_tokens': 2889637.0, 'mean_token_accuracy': 0.8744930505752564, 'epoch': 0.7}
+{'loss': 0.4087, 'grad_norm': 0.9032373428344727, 'learning_rate': 2.0792204802450515e-05, 'entropy': 0.42162722647190093, 'num_tokens': 2969948.0, 'mean_token_accuracy': 0.8785750597715378, 'epoch': 0.72}
+{'loss': 0.4112, 'grad_norm': 0.7155641913414001, 'learning_rate': 1.825715714427594e-05, 'entropy': 0.42317967116832733, 'num_tokens': 3050099.0, 'mean_token_accuracy': 0.8778091341257095, 'epoch': 0.74}
+{'loss': 0.3785, 'grad_norm': 1.615503191947937, 'learning_rate': 1.5852017042066214e-05, 'entropy': 0.39320995956659316, 'num_tokens': 3129744.0, 'mean_token_accuracy': 0.8875099450349808, 'epoch': 0.75}
+{'loss': 0.3977, 'grad_norm': 0.8235536217689514, 'learning_rate': 1.3586627529536117e-05, 'entropy': 0.4077165722846985, 'num_tokens': 3210578.0, 'mean_token_accuracy': 0.8798374712467194, 'epoch': 0.77}
+  warnings.warn(
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 517/517 [10:30<00:00,  1.23s/it]/root/miniconda3/lib/python3.12/site-packages/peft/utils/save_and_load.py:309: UserWarning: Setting `save_embedding_layers` to `True` as the embedding layer has been resized during finetuning.
+{'loss': 0.3963, 'grad_norm': 0.7071451544761658, 'learning_rate': 1.1470259711237286e-05, 'entropy': 0.4077985852956772, 'num_tokens': 3291274.0, 'mean_token_accuracy': 0.8809231519699097, 'epoch': 0.79}
+{'loss': 0.3683, 'grad_norm': 0.7701079845428467, 'learning_rate': 9.511574820571095e-06, 'entropy': 0.3803839862346649, 'num_tokens': 3371314.0, 'mean_token_accuracy': 0.890044042468071, 'epoch': 0.81}
+{'loss': 0.3691, 'grad_norm': 0.6861093640327454, 'learning_rate': 7.71858877369887e-06, 'entropy': 0.38183895498514175, 'num_tokens': 3451869.0, 'mean_token_accuracy': 0.889261394739151, 'epoch': 0.83}
+{'loss': 0.4067, 'grad_norm': 0.8144535422325134, 'learning_rate': 6.0986393644119735e-06, 'entropy': 0.41563672125339507, 'num_tokens': 3532496.0, 'mean_token_accuracy': 0.8784062206745148, 'epoch': 0.85}
+{'loss': 0.3942, 'grad_norm': 0.8203566074371338, 'learning_rate': 4.658356234217437e-06, 'entropy': 0.40429009348154066, 'num_tokens': 3612725.0, 'mean_token_accuracy': 0.8833654463291168, 'epoch': 0.87}
+{'loss': 0.3709, 'grad_norm': 0.8483343124389648, 'learning_rate': 3.403633740535983e-06, 'entropy': 0.38642378002405164, 'num_tokens': 3693335.0, 'mean_token_accuracy': 0.8887817412614822, 'epoch': 0.89}
+{'loss': 0.3601, 'grad_norm': 0.7103561758995056, 'learning_rate': 2.339606834049518e-06, 'entropy': 0.37835474908351896, 'num_tokens': 3773746.0, 'mean_token_accuracy': 0.8919924199581146, 'epoch': 0.91}
+{'loss': 0.4182, 'grad_norm': 0.7662275433540344, 'learning_rate': 1.4706300439201348e-06, 'entropy': 0.4278450310230255, 'num_tokens': 3854275.0, 'mean_token_accuracy': 0.876081845164299, 'epoch': 0.93}
+{'loss': 0.4009, 'grad_norm': 0.7578221559524536, 'learning_rate': 8.00259656883362e-07, 'entropy': 0.4133585751056671, 'num_tokens': 3934908.0, 'mean_token_accuracy': 0.8810949802398682, 'epoch': 0.95}
+{'loss': 0.3857, 'grad_norm': 0.9323786497116089, 'learning_rate': 3.312391631479006e-07, 'entropy': 0.4001253381371498, 'num_tokens': 4014464.0, 'mean_token_accuracy': 0.8835934638977051, 'epoch': 0.97}
+{'loss': 0.3757, 'grad_norm': 0.7063853740692139, 'learning_rate': 6.548802866441217e-08, 'entropy': 0.39062153100967406, 'num_tokens': 4094667.0, 'mean_token_accuracy': 0.8879765689373016, 'epoch': 0.99}
+  warnings.warn(
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 517/517 [10:36<00:00,  1.23s/it]
+{'train_runtime': 636.8453, 'train_samples_per_second': 6.495, 'train_steps_per_second': 0.812, 'train_loss': 0.43498413659617796, 'entropy': 0.41211938645158497, 'num_tokens': 4150642.0, 'mean_token_accuracy': 0.8794764024870736, 'epoch': 1.0}
+Save model
+/root/miniconda3/lib/python3.12/site-packages/peft/utils/save_and_load.py:309: UserWarning: Setting `save_embedding_layers` to `True` as the embedding layer has been resized during finetuning.
+  warnings.warn(
