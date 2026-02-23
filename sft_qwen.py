@@ -91,7 +91,7 @@ def main():
     def process_chat_template(example):
         text = tokenizer.apply_chat_template(
             example["messages"],
-            tokenize=False,
+            tokenize=False, 
             add_generation_prompt=False
         )
         return {"text": text}

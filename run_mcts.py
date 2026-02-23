@@ -26,7 +26,7 @@ def main():
 
     # 🔥 加大预算：30 次探索足够它算出这道 4 步计算题了
     config = MCTSConfig(
-        num_simulations=60,      
+        num_simulations=60,       
         branching_factor=2,      
         max_depth=15,            
         c_puct=1.414,            

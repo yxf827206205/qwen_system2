@@ -67,7 +67,7 @@ To calculate this exactly, I will use the python sandbox:
     py_end_id = tokenizer.convert_tokens_to_ids('<|python_end|>')
     im_end_id = tokenizer.convert_tokens_to_ids('<|im_end|>')
     
-    stop_ids = [tokenizer.eos_token_id, py_end_id, im_end_id]
+    stop_ids = [tokenizer.eos_token_id, py_end_id, im_end_id] 
     stop_ids = [sid for sid in stop_ids if sid is not None]
     
     print("正在等待模型补全算式...")

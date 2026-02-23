@@ -111,7 +111,7 @@ def extract_answer(text):
     if match:
         return match.group(1).strip()
     
-    # 2. 尝试从 The final answer is 中提取
+    # 2. 尝试从 The final answer is 中提取 
     match = re.search(r'final answer is\s*([0-9.\-]+)', text, re.IGNORECASE)
     if match:
         return match.group(1).strip()

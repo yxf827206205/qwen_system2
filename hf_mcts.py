@@ -25,7 +25,7 @@ def execute_python_sandbox(code_str):
         print(f" [❌ 沙箱报错]: {e}")
         return f"Error: {e}"
 
-class MCTSNode:
+class MCTSNode: 
     __slots__ = (
         "tokens", "parent", "children", "visit_count", "total_value",
         "past_key_values", "last_logits", "state_value", "is_terminal", "text_so_far", "depth"

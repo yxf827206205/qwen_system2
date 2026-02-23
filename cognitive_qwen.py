@@ -40,7 +40,7 @@ class CognitiveQwen(nn.Module):
             self.device, 
             dtype=torch.bfloat16
         )
-        nn.init.zeros_(self.value_head.weight)
+        nn.init.zeros_(self.value_head.weight) 
 
     def forward(self, input_ids, attention_mask=None, past_key_values=None, return_value=False, use_cache=True):
         """
