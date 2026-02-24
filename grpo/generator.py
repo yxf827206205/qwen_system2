@@ -39,7 +39,8 @@ class ToolAwareGenerator:
         
         self._stop_ids.extend([
             151645,  # <|im_end|>
-            151643,  # <|endoftext|>
+            151672,  # <|endoftext|>
+            151670,
             self._py_end_id
         ])
         self._stop_ids = list(set([x for x in self._stop_ids if x is not None]))
