@@ -19,8 +19,8 @@ class GRPOConfig:
     # ── 生成超参 ───────────────────────────────────────────────────────────
     # 注意：max_segment_tokens 是两次工具调用之间单段的最大长度
     # max_total_tokens 是整条轨迹（含注入文本）的硬上限
-    max_segment_tokens: int   = 1520
-    max_total_tokens:   int   = 1520
+    max_segment_tokens: int   = 512
+    max_total_tokens:   int   = 1024
     temperature:        float = 0.6
     top_p:              float = 0.9
 
