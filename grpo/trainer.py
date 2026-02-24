@@ -101,7 +101,7 @@ class GRPOToolTrainer:
 
                 group_rollouts = self.generator.generate_group(prompt_ids, self.cfg.group_size)
                 
-                tqdm.write(f"\n[Debug] 轨迹末尾预览: {group_rollouts[0].text[-300:]}")
+                # tqdm.write(f"\n[Debug] 轨迹末尾预览: {group_rollouts[0].text[-300:]}")
                 group_rewards = [compute_reward(r.text, expected, self.cfg) for r in group_rollouts]
 
                 prompt_ids_list.append(prompt_ids)

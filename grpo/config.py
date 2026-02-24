@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 @dataclass
 class GRPOConfig:
     # ── 路径 ──────────────────────────────────────────────────────────────
-    base_model_path: str  = "/root/autodl-tmp/models/Qwen3-0.6B-V3"
+    base_model_path: str  = "/root/autodl-tmp/models/Qwen3-0.6B-Base"
     sft_lora_path:   str  = "/root/autodl-tmp/checkpoints/qwen_sft_use_tool——v3/final_lora"
     output_dir:      str  = "/root/autodl-tmp/checkpoints/qwen_grpo_tool_v1"
 
