@@ -18,15 +18,13 @@ class MCTSConfig:
 
 
 def execute_python_sandbox(code_str):
-    print(f" [🚀 沙箱拦截] 执行: {code_str.strip()}")
+    # print(f" [🚀 沙箱拦截] 执行: {code_str.strip()}") # 并行时可以注释掉防刷屏
     try:
         clean_code = code_str.strip()
         result = eval(clean_code, {"__builtins__": {}}, {})
         result_str = f"{result:.4f}".rstrip('0').rstrip('.') if isinstance(result, float) else str(result)
-        print(f" [✅ 沙箱返回]: {result_str}")
         return result_str
     except Exception as e:
-        print(f" [❌ 沙箱报错]: {e}")
         return f"Error: {e}"
 
 
@@ -46,7 +44,8 @@ class MCTSNode:
         self.visit_count = 0
         self.total_value = 0.0
 
-        self.past_key_values = past_key_values
+        # 在 V2 版本中，past_key_values 绝大部分时间都应该是 None，防止 OOM
+        self.past_key_values = past_key_values 
         self.last_logits = last_logits
         self.state_value = state_value
         self.is_terminal = is_terminal
@@ -70,9 +69,6 @@ class MCTSNode:
 
     def is_leaf(self) -> bool:
         return len(self.children) == 0
-
-    def free_kv_cache(self):
-        self.past_key_values = None
 
 
 class HF_MCTS:
@@ -101,7 +97,6 @@ class HF_MCTS:
         self._rng.manual_seed(42)
 
     @torch.inference_mode()
-    # ✅ 修复：增加了 expected_answer 参数
     def search(self, prompt_text: str, expected_answer: str = None) -> Tuple[str, float]:
         prompt_tokens = self.tokenizer.encode(prompt_text)
 
@@ -110,11 +105,11 @@ class HF_MCTS:
 
         root_logits = outputs[0][:, -1, :]
         root_val = torch.sigmoid(outputs[1]).item()
-        root_pkv = outputs[2]
-
+        
+        # 🔥 V2 核心改进：根节点不再保存 KV Cache，彻底释放内存
         root = MCTSNode(
             tokens=prompt_tokens, parent=None,
-            past_key_values=root_pkv, last_logits=root_logits, state_value=root_val,
+            past_key_values=None, last_logits=root_logits, state_value=root_val,
             text_so_far=prompt_text
         )
 
@@ -129,11 +124,9 @@ class HF_MCTS:
 
             reward = self._evaluate(eval_node, prompt_text)
             self._backpropagate(eval_node, reward)
+            
+            # 🔥 V2 核心改进：无需再手动 prune_kv_caches，因为根本就没存
 
-            if sim_idx % 10 == 9:
-                self._prune_kv_caches(root)
-
-        # ✅ 修复：将 expected_answer 传给提取函数
         best_response, best_score = self._extract_best_response(root, prompt_tokens, expected_answer)
         return best_response, best_score
 
@@ -158,14 +151,11 @@ class HF_MCTS:
             current_id = start_token_id
             child_tokens = list(node.tokens)
             
-            # ✅ KV Cache 隔离，防止串味污染
-            if node.past_key_values is not None:
-                if hasattr(node.past_key_values, "clone"):
-                    current_pkv = node.past_key_values.clone()
-                else:
-                    current_pkv = copy.deepcopy(node.past_key_values)
-            else:
-                current_pkv = None
+            # 🔥 V2 核心改进：空间换时间，每次扩展时瞬间重算当前分支的 KV Cache！
+            # 这样保证了 100% 物理隔离，且再也不会出现 CUDA Out of Memory。
+            ids = torch.tensor([node.tokens], dtype=torch.long, device=self.device)
+            out = self.model(ids, use_cache=True, return_value=True)
+            current_pkv = out[2]
 
             step_count = 0
             is_terminal = False
@@ -220,14 +210,15 @@ class HF_MCTS:
 
                     next_logits = inj_out[0][:, -1, :]
                     state_value = torch.sigmoid(inj_out[1]).item()
-                    current_pkv = inj_out[2]
 
                     child_tokens.extend(inject_tokens)
                     child_text += inject_text
 
+            # 🔥 V2 核心改进：新生成的节点坚决不保存 current_pkv！
             child = MCTSNode(
                 tokens=child_tokens, parent=node,
-                past_key_values=current_pkv, last_logits=next_logits,
+                past_key_values=None, 
+                last_logits=next_logits,
                 state_value=state_value, is_terminal=is_terminal,
                 text_so_far=child_text
             )
@@ -246,7 +237,6 @@ class HF_MCTS:
             if re.search(r'[Tt]he\s+(?:final\s+)?answer\s+is\s*[:\-]?\s*\$?[\d,]+', generated_part):
                 score = max(score, 0.90)
                 
-            # ✅ 强力惩罚未使用工具的幻觉捷径
             if '<|output_start|>' not in generated_part:
                 score -= 0.6 
                 
@@ -274,7 +264,6 @@ class HF_MCTS:
             current.total_value += reward
             current = current.parent
 
-    # ✅ 修复：提取逻辑支持上帝视角 expected_answer
     def _extract_best_response(self, root: MCTSNode, prompt_tokens: List[int], expected_answer: str = None) -> Tuple[str, float]:
         if root.is_leaf():
             return "", root.q_value
@@ -306,13 +295,11 @@ class HF_MCTS:
             has_tool = 1 if '<|output_start|>' in text else 0
             is_terminal = 1 if node.is_terminal else 0
             
-            # ✅ 上帝视角探针：如果能提取到完美答案，就赋予最高优先级
             if expected_answer is not None:
                 model_ans = _extract_ans(text)
                 is_correct = 1 if (model_ans == expected_answer) else 0
                 return (is_correct, has_tool, is_terminal, -node.depth, node.q_value)
             
-            # 普通优先级（无上帝视角）
             return (has_tool, is_terminal, node.q_value, -node.depth)
     
         best = max(all_leaves, key=_key)
@@ -320,18 +307,6 @@ class HF_MCTS:
             best.tokens[len(prompt_tokens):], skip_special_tokens=False
         )
         return response_text, root.q_value
-
-    def _prune_kv_caches(self, root: MCTSNode):
-        def _recurse(node: MCTSNode):
-            for child in node.children:
-                _recurse(child)
-            if node.is_leaf() and node.visit_count > 0 and not node.is_terminal:
-                pass
-            if node.is_terminal and node.past_key_values is not None:
-                node.free_kv_cache()
-
-        _recurse(root)
-        torch.cuda.empty_cache()
 
     def _sample_diverse_tokens(self, logits: torch.Tensor, k: int,
                                 temperature: float, top_k: int) -> List[int]:

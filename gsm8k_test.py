@@ -6,9 +6,10 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 
 # ================= 配置区 =================
+# 必须使用合并后的全新基座！
 BASE_MODEL_PATH = "/root/autodl-tmp/models/Qwen3-0.6B-Base"
-LORA_PATH = "/root/autodl-tmp/checkpoints/qwen_sft_mix/final_lora"
-MAX_TEST_SAMPLES = 100  # 先测 100 条看看效果，全量测大约 1319 条
+LORA_PATH = "/root/autodl-tmp/checkpoints/qwen_sft_use_tool——v3/final_lora"
+MAX_TEST_SAMPLES = 100  # 先测 100 条看看效果
 
 def load_model_and_tokenizer():
     print("1. 加载 Tokenizer...")
@@ -21,7 +22,8 @@ def load_model_and_tokenizer():
         device_map="auto",
         trust_remote_code=True,
     )
-    # 调整 embedding 大小以容纳新 token
+    
+    # 调整 embedding 大小以容纳新 token (如果 Base 模型已经扩充过，这步是安全冗余)
     base_model.resize_token_embeddings(len(tokenizer))
     
     # 加载 LoRA 权重并将其与底座合并 (极大提升推理速度)
@@ -34,11 +36,8 @@ def load_model_and_tokenizer():
 def execute_python_sandbox(code_str):
     """一个极简的 Python 沙箱，用于执行模型生成的数学表达式"""
     try:
-        # 去除可能多余的空格或换行
         clean_code = code_str.strip()
-        # 安全地计算数学表达式
         result = eval(clean_code, {"__builtins__": {}}, {})
-        # 格式化为最多保留四位小数的浮点数或整数
         if isinstance(result, float):
             return f"{result:.4f}".rstrip('0').rstrip('.')
         return str(result)
@@ -46,75 +45,84 @@ def execute_python_sandbox(code_str):
         return f"Error: {e}"
 
 def generate_with_tools(model, tokenizer, prompt):
-    """带工具拦截器的生成循环"""
+    """带工具拦截器的生成循环（修正 Tensor 拼接版）"""
     messages = [{"role": "user", "content": prompt}]
-    # 格式化 prompt
+    
+    # 格式化 prompt，并手动加上 <think>\n 引导模型进入慢思考状态
     input_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-    input_ids = tokenizer.encode(input_text, return_tensors="pt").to(model.device)
+    input_text += "<think>\n"
+    
+    # 首次编码
+    input_ids = tokenizer.encode(input_text, return_tensors="pt", add_special_tokens=False).to(model.device)
     
     python_end_id = tokenizer.convert_tokens_to_ids('<|python_end|>')
-    im_end_id = tokenizer.convert_tokens_to_ids('<|im_end|>') # 获取 im_end 的 ID
+    im_end_id = tokenizer.convert_tokens_to_ids('<|im_end|>')
     
-    # 把所有可能代表“停止”的 ID 都放进列表里
+    # 定义停止条件
     stop_ids = [tokenizer.eos_token_id, python_end_id]
     if im_end_id is not None:
         stop_ids.append(im_end_id)
+        
+    max_steps = 15  # 允许模型最多调用 15 次工具
+    generated_text = "<think>\n"
     
-
-    max_steps = 10 # 防止无限循环调用工具
-    generated_text = ""
-    
-    for _ in range(max_steps):
+    for step in range(max_steps):
         # 让模型生成，停在正常结束或 <|python_end|>
         outputs = model.generate(
             input_ids,
-            max_new_tokens=256,
-            eos_token_id=stop_ids,  # <-- 换成包含 im_end_id 的列表
+            max_new_tokens=512,
+            eos_token_id=stop_ids,
             do_sample=False, 
             pad_token_id=tokenizer.pad_token_id
         )
         
-        # 截取新生成的部分
-        new_tokens = outputs[0][len(input_ids[0]):]
-        new_text = tokenizer.decode(new_tokens, skip_special_tokens=False)
+        # 截取新生成的部分 ID
+        new_token_ids = outputs[0][len(input_ids[0]):]
+        new_text = tokenizer.decode(new_token_ids, skip_special_tokens=False)
         generated_text += new_text
         
+        # 将 outputs (包含 prompt + newly_generated) 设为下一轮的基座
+        input_ids = outputs
+        
         # 如果模型输出了 <|python_end|>，说明它发起了工具调用
-        if new_tokens[-1].item() == python_end_id:
-            # 提取 <|python_start|> 和 <|python_end|> 之间的代码
-            match = re.search(r'<\|python_start\|>(.*?)<\|python_end\|>', generated_text, re.DOTALL)
-            if match:
-                code_to_run = match.group(1)
-                # 执行真实计算
+        if len(new_token_ids) > 0 and new_token_ids[-1].item() == python_end_id:
+            
+            # 使用 rfind 查找最后一个 <|python_start|>，防止正则匹配到前面的旧代码
+            start_idx = generated_text.rfind('<|python_start|>')
+            end_idx = generated_text.rfind('<|python_end|>')
+            
+            if start_idx != -1 and end_idx != -1 and start_idx < end_idx:
+                code_to_run = generated_text[start_idx + len('<|python_start|>'):end_idx]
+                
+                # 真实计算
                 calc_result = execute_python_sandbox(code_to_run)
                 
                 # 拼接执行结果
-                tool_output_text = f"<|output_start|>{calc_result}<|output_end|>"
+                tool_output_text = f"<|output_start|>{calc_result}<|output_end|>\n"
                 generated_text += tool_output_text
                 
-                # 将拼接后的完整文本重新 tokenize，喂回给模型继续生成
-                full_current_text = input_text + generated_text
-                input_ids = tokenizer.encode(full_current_text, return_tensors="pt").to(model.device)
+                # 🔥 核心修复：把结果编码后直接 concat 到 Tensor 后面，绝对不重新 tokenize 全文！
+                tool_output_ids = tokenizer.encode(tool_output_text, return_tensors="pt", add_special_tokens=False).to(model.device)
+                input_ids = torch.cat([input_ids, tool_output_ids], dim=-1)
             else:
-                # 解析失败，强行终止
-                break
+                break # 解析保护：找不到配对的标签就强行终止
         else:
-            # 正常生成结束
+            # 没有遇到 <|python_end|>，说明正常回答完毕（遇到了 EOS 或 <|im_end|>）
             break
             
     return generated_text
 
 def extract_answer(text):
-    """提取生成的答案和真实答案"""
+    """提取生成的答案和真实答案，兼容千分位逗号"""
     # 1. 尝试从 \boxed{} 中提取
     match = re.search(r'\\boxed\{([^}]+)\}', text)
     if match:
-        return match.group(1).strip()
+        return match.group(1).replace(',', '').strip()
     
-    # 2. 尝试从 The final answer is 中提取 
-    match = re.search(r'final answer is\s*([0-9.\-]+)', text, re.IGNORECASE)
+    # 2. 尝试从 final answer is 中提取 
+    match = re.search(r'[Tt]he\s+(?:final\s+)?answer\s+is\s*[:\-]?\s*\$?([\d\.\-\,]+)', text)
     if match:
-        return match.group(1).strip()
+        return match.group(1).replace(',', '').strip()
     
     return None
 
@@ -122,7 +130,7 @@ def main():
     model, tokenizer = load_model_and_tokenizer()
     
     print("3. 加载 GSM8K 测试集...")
-    dataset = load_dataset("openai/gsm8k", "main", split="test")
+    dataset = load_dataset("gsm8k", "main", split="test")
     test_data = dataset.select(range(min(MAX_TEST_SAMPLES, len(dataset))))
     
     correct_count = 0
@@ -132,8 +140,8 @@ def main():
     
     for i, item in enumerate(tqdm(test_data)):
         question = item["question"]
-        # GSM8K 的真实答案在 #### 后面
-        ground_truth = item["answer"].split("####")[-1].strip()
+        # GSM8K 的真实答案在 #### 后面，同时去除逗号防止比对失败
+        ground_truth = item["answer"].split("####")[-1].replace(',', '').strip()
         
         # 生成带工具调用的回复
         response = generate_with_tools(model, tokenizer, question)
@@ -141,16 +149,16 @@ def main():
         # 提取模型答案
         model_answer = extract_answer(response)
         
-        # 简单比对（实际工程中可能需要更严谨的正则匹配，比如去除逗号等）
         is_correct = (model_answer == ground_truth)
         if is_correct:
             correct_count += 1
             
-        if i < 3: # 打印前几个例子看看效果
+        # 打印前 5 个例子，看看它到底在怎么思考
+        if i < 5: 
             print(f"\n[{i+1}] Q: {question}")
             print(f"Model Output:\n{response}")
             print(f"Extracted: {model_answer} | Truth: {ground_truth} | Correct: {is_correct}\n")
-            print("-" * 50)
+            print("=" * 60)
 
     accuracy = correct_count / total_count * 100
     print(f"\n==== 测试完成 ====")
