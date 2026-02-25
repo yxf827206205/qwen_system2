@@ -12,7 +12,7 @@ class GRPOConfig:
     output_dir:      str  = "/root/autodl-tmp/checkpoints/qwen_grpo_tool_v1"
 
     # ── GRPO 核心超参 ──────────────────────────────────────────────────────
-    group_size:      int   = 6     # G：每个 Prompt 采样多少条回答
+    group_size:      int   = 4     # G：每个 Prompt 采样多少条回答
     kl_coef:         float = 0.04    # β：KL 惩罚系数
     clip_eps:        float = 0.2     # PPO 风格的 ratio clip 范围
 
