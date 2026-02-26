@@ -8,7 +8,7 @@ from peft import PeftModel
 # ================= 配置区 =================
 # 必须使用合并后的全新基座！
 BASE_MODEL_PATH = "/root/autodl-tmp/models/Qwen3-0.6B-Base"
-LORA_PATH = "/root/autodl-tmp/checkpoints/qwen_sft_use_tool——v3/final_lora"
+LORA_PATH = "/root/autodl-tmp/checkpoints/qwen_grpo_tool_v1/final"
 MAX_TEST_SAMPLES = 100  # 先测 100 条看看效果
 
 def load_model_and_tokenizer():
