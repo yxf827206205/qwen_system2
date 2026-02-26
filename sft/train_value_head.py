@@ -44,10 +44,10 @@ CONFIG = {
     "batch_size":                  16,   # v2:8  → v3:16，每批样本更多，梯度方向更稳
     "gradient_accumulation_steps": 4,    # 等效 batch = 64，和 v2 一致
     "epochs":                      5,
-    "learning_rate":               1e-5, # v2:5e-5 → v3:1e-5，配合平衡采样更保守
+    "learning_rate":              3e-4,
     "weight_decay":                0.01,
     "max_length":                  1024,
-    "warmup_ratio":                0.1,
+    "warmup_ratio":                0.15,
 
     # EMA 平滑系数（用于 wandb 可视化趋势，不影响训练）
     "ema_alpha":                   0.95,
