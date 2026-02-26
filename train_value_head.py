@@ -52,7 +52,7 @@ class ValueDataset(Dataset):
 
 # ================= 2. 主训练程序 =================
 def main():
-    print("============== 🧠 启动 Value Head 价值直觉训练 ==============")
+    print("============== 启动 Value Head 价值直觉训练 ==============")
     
     print("1. 加载 Tokenizer 与模型骨架...")
     tokenizer = AutoTokenizer.from_pretrained(LORA_PATH, trust_remote_code=True)

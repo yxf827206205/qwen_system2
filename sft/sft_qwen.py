@@ -6,7 +6,7 @@ from trl import SFTTrainer, SFTConfig
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
-    AddedToken  # 🔥 引入防碎裂神器
+    AddedToken  
 )
 from peft import LoraConfig, get_peft_model
 
@@ -55,7 +55,7 @@ def continue_sft():
     base_model.resize_token_embeddings(len(tokenizer))
     base_model.enable_input_require_grads()
 
-    print("3. 🔥 继承心血：加载冷启动 LoRA 并开启继续训练 (Continue Training)")
+    print("3. 加载冷启动 LoRA 并开启继续训练 (Continue Training)")
     # 注意：is_trainable=True 是核心！它会激活这个 LoRA 和词表层的梯度
     model = PeftModel.from_pretrained(base_model, COLD_START_LORA, is_trainable=True)
     model.print_trainable_parameters()
@@ -187,7 +187,7 @@ def main():
     # test_str = "<|python_start|>1+1<|python_end|>"
     # test_tokens = tokenizer.encode(test_str, add_special_tokens=False)
     # print(f"\n[验证 Tokenizer] '{test_str}' 编码后的 ID: {test_tokens}")
-    # print("如果列表里只有三个数字 (比如 [151646, x, 151647])，说明 Token 注册完美成功！\n")
+
 
     print("5. SFTConfig")
     training_args = SFTConfig(

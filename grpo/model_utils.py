@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoModelForCausalLM, AutoTokenizer, AddedToken
 from peft import PeftModel
-from config import GRPOConfig
+from grpo.config import GRPOConfig
 
 def load_tokenizer(cfg: GRPOConfig) -> AutoTokenizer:
     # 必须从 SFT LoRA 路径加载 Tokenizer，确保包含 4 个沙箱词！

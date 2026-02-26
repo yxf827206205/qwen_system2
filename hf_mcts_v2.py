@@ -18,7 +18,7 @@ class MCTSConfig:
 
 
 def execute_python_sandbox(code_str):
-    # print(f" [🚀 沙箱拦截] 执行: {code_str.strip()}") # 并行时可以注释掉防刷屏
+   
     try:
         clean_code = code_str.strip()
         result = eval(clean_code, {"__builtins__": {}}, {})
@@ -106,7 +106,7 @@ class HF_MCTS:
         root_logits = outputs[0][:, -1, :]
         root_val = torch.sigmoid(outputs[1]).item()
         
-        # 🔥 V2 核心改进：根节点不再保存 KV Cache，彻底释放内存
+        # 核心改进：根节点不再保存 KV Cache，彻底释放内存
         root = MCTSNode(
             tokens=prompt_tokens, parent=None,
             past_key_values=None, last_logits=root_logits, state_value=root_val,
@@ -125,7 +125,7 @@ class HF_MCTS:
             reward = self._evaluate(eval_node, prompt_text)
             self._backpropagate(eval_node, reward)
             
-            # 🔥 V2 核心改进：无需再手动 prune_kv_caches，因为根本就没存
+            #  核心改进：无需再手动 prune_kv_caches，因为根本就没存
 
         best_response, best_score = self._extract_best_response(root, prompt_tokens, expected_answer)
         return best_response, best_score
@@ -151,7 +151,7 @@ class HF_MCTS:
             current_id = start_token_id
             child_tokens = list(node.tokens)
             
-            # 🔥 V2 核心改进：空间换时间，每次扩展时瞬间重算当前分支的 KV Cache！
+            #核心改进：空间换时间，每次扩展时瞬间重算当前分支的 KV Cache！
             # 这样保证了 100% 物理隔离，且再也不会出现 CUDA Out of Memory。
             ids = torch.tensor([node.tokens], dtype=torch.long, device=self.device)
             out = self.model(ids, use_cache=True, return_value=True)
@@ -214,7 +214,7 @@ class HF_MCTS:
                     child_tokens.extend(inject_tokens)
                     child_text += inject_text
 
-            # 🔥 V2 核心改进：新生成的节点坚决不保存 current_pkv！
+            # 核心改进：新生成的节点坚决不保存 current_pkv！
             child = MCTSNode(
                 tokens=child_tokens, parent=node,
                 past_key_values=None, 

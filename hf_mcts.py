@@ -18,15 +18,15 @@ class MCTSConfig:
 
 
 def execute_python_sandbox(code_str):
-    print(f" [🚀 沙箱拦截] 执行: {code_str.strip()}")
+    print(f" [沙箱拦截] 执行: {code_str.strip()}")
     try:
         clean_code = code_str.strip()
         result = eval(clean_code, {"__builtins__": {}}, {})
         result_str = f"{result:.4f}".rstrip('0').rstrip('.') if isinstance(result, float) else str(result)
-        print(f" [✅ 沙箱返回]: {result_str}")
+        print(f" [沙箱返回]: {result_str}")
         return result_str
     except Exception as e:
-        print(f" [❌ 沙箱报错]: {e}")
+        print(f" [沙箱报错]: {e}")
         return f"Error: {e}"
 
 
@@ -101,7 +101,7 @@ class HF_MCTS:
         self._rng.manual_seed(42)
 
     @torch.inference_mode()
-    # ✅ 修复：增加了 expected_answer 参数
+    # 增加了 expected_answer 参数
     def search(self, prompt_text: str, expected_answer: str = None) -> Tuple[str, float]:
         prompt_tokens = self.tokenizer.encode(prompt_text)
 
@@ -133,7 +133,7 @@ class HF_MCTS:
             if sim_idx % 10 == 9:
                 self._prune_kv_caches(root)
 
-        # ✅ 修复：将 expected_answer 传给提取函数
+        # 将 expected_answer 传给提取函数
         best_response, best_score = self._extract_best_response(root, prompt_tokens, expected_answer)
         return best_response, best_score
 
@@ -246,7 +246,7 @@ class HF_MCTS:
             if re.search(r'[Tt]he\s+(?:final\s+)?answer\s+is\s*[:\-]?\s*\$?[\d,]+', generated_part):
                 score = max(score, 0.90)
                 
-            # ✅ 强力惩罚未使用工具的幻觉捷径
+            #  强力惩罚未使用工具的幻觉捷径
             if '<|output_start|>' not in generated_part:
                 score -= 0.6 
                 
@@ -274,7 +274,7 @@ class HF_MCTS:
             current.total_value += reward
             current = current.parent
 
-    # ✅ 修复：提取逻辑支持上帝视角 expected_answer
+    #  修复：提取逻辑支持上帝视角 expected_answer
     def _extract_best_response(self, root: MCTSNode, prompt_tokens: List[int], expected_answer: str = None) -> Tuple[str, float]:
         if root.is_leaf():
             return "", root.q_value
@@ -306,7 +306,7 @@ class HF_MCTS:
             has_tool = 1 if '<|output_start|>' in text else 0
             is_terminal = 1 if node.is_terminal else 0
             
-            # ✅ 上帝视角探针：如果能提取到完美答案，就赋予最高优先级
+            #  上帝视角探针：如果能提取到完美答案，就赋予最高优先级
             if expected_answer is not None:
                 model_ans = _extract_ans(text)
                 is_correct = 1 if (model_ans == expected_answer) else 0

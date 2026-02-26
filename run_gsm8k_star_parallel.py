@@ -34,7 +34,7 @@ def extract_model_answer(text: str) -> str:
 
 # ================= 主程序 =================
 def main():
-    # 🔥 增加命令行参数解析
+    #  增加命令行参数解析
     parser = argparse.ArgumentParser(description="MCTS 并行数据生成器")
     parser.add_argument("--total_shards", type=int, default=1, help="总进程/分片数量")
     parser.add_argument("--shard_idx", type=int, default=0, help="当前进程的分片索引 (0 到 total_shards-1)")
@@ -45,7 +45,7 @@ def main():
 
     OUTPUT_FILE = f"data/gsm8k_star_shard_{args.shard_idx}_of_{args.total_shards}.jsonl"
     
-    print(f"============== 🚀 启动 GSM8K STaR 收割机 [分片 {args.shard_idx}/{args.total_shards}] ==============")
+    print(f"==============  启动 GSM8K STaR 收割机 [分片 {args.shard_idx}/{args.total_shards}] ==============")
     
     # 1. 加载 Tokenizer
     tokenizer = AutoTokenizer.from_pretrained(LORA_PATH, trust_remote_code=True)
@@ -80,7 +80,7 @@ def main():
     # 保证所有进程打乱顺序一致，截取前 500 道
     dataset = dataset.shuffle(seed=42).select(range(NUM_QUESTIONS))
     
-    # 🔥 核心切片逻辑：将 500 道题平均分给多个进程
+    # 切片逻辑：将 500 道题平均分给多个进程
     dataset = dataset.shard(num_shards=args.total_shards, index=args.shard_idx)
     print(f"✅ [分片 {args.shard_idx}] 分配到 {len(dataset)} 道题目！")
 
@@ -126,12 +126,12 @@ def main():
                 f.write(json.dumps(record, ensure_ascii=False) + "\n")
                 
             success_count += 1
-            tqdm.write(f"✅ [进程 {args.shard_idx} | 第 {idx+1} 题] 成功! 进度: {success_count}/{idx+1}")
+            tqdm.write(f"[进程 {args.shard_idx} | 第 {idx+1} 题] 成功! 进度: {success_count}/{idx+1}")
         else:
-            tqdm.write(f"❌ [进程 {args.shard_idx} | 第 {idx+1} 题] 丢弃。提取: {model_ans}, 期望: {expected_answer}")
+            tqdm.write(f"[进程 {args.shard_idx} | 第 {idx+1} 题] 丢弃。提取: {model_ans}, 期望: {expected_answer}")
 
     elapsed = (time.time() - start_time) / 3600 
-    print(f"\n🎉 [分片 {args.shard_idx}] 结束！耗时: {elapsed:.2f} 小时，成功: {success_count}/{len(dataset)}")
+    print(f"\n[分片 {args.shard_idx}] 结束！耗时: {elapsed:.2f} 小时，成功: {success_count}/{len(dataset)}")
 
 if __name__ == "__main__":
     main()

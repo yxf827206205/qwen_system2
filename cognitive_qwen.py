@@ -22,7 +22,7 @@ class CognitiveQwen(nn.Module):
             attn_implementation="flash_attention_2" 
         )
         
-        # 💥【极度关键】：扩充词表，否则 LoRA 加载会报维度错误
+        # 扩充词表，否则 LoRA 加载会报维度错误
         if vocab_size is not None:
             self.base_model.resize_token_embeddings(vocab_size)
             

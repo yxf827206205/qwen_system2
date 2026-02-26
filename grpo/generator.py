@@ -8,8 +8,8 @@ from typing import Optional, List
 import torch
 from transformers import PreTrainedTokenizerBase
 
-from config  import GRPOConfig
-from sandbox import PythonSandbox
+from grpo.config import GRPOConfig
+from grpo.sandbox import PythonSandbox
 
 @dataclass
 class Rollout:

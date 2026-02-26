@@ -24,7 +24,7 @@ def main():
     )
     model.eval()
 
-    # 🔥 加大预算：30 次探索足够它算出这道 4 步计算题了
+ 
     config = MCTSConfig(
         num_simulations=60,       
         branching_factor=2,      
@@ -37,8 +37,7 @@ def main():
     mcts_engine = HF_MCTS(model, tokenizer, config, device=model.device)
 
     question = "A factory produces 1250 gadgets per day. They operate for 24 days a month. If each gadget is sold for $15 and the monthly operating cost is $120,500, what is the exact net profit for the month?"
-    
-    # 🔥 100% 对齐 SFT 训练格式的 One-Shot 模板
+
     messages = [
         {"role": "system", "content": "You are a meticulous math genius. You solve problems step-by-step."},
         {"role": "user", "content": "What is 15 multiplied by 8?"},
@@ -46,7 +45,6 @@ def main():
         {"role": "user", "content": question}
     ]
 
-    # 使用官方模板引擎组装，绝不差一个空格
     raw_prompt = tokenizer.apply_chat_template(
         messages,
         tokenize=False,
@@ -67,10 +65,10 @@ def main():
     elapsed = time.time() - t0
     
     print("=" * 60)
-    print(f"\n✅ MCTS 搜索完成! 耗时: {elapsed:.2f} 秒")
+    print(f"\n MCTS 搜索完成! 耗时: {elapsed:.2f} 秒")
     print(f"根节点 Q 值 (胜率评估): {root_q_value:.4f}")
     
-    print("\n👑 MCTS 找出的最佳推理路径：")
+    print("\n MCTS 找出的最佳推理路径：")
     print("-" * 50)
     print("<think>\n" + best_response)
     print("-" * 50)
