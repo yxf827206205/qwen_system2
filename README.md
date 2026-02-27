@@ -1,4 +1,4 @@
-# 🧠 Cognitive-Nano-Qwen: System 2 慢思考推理架构
+#  Cognitive-Nano-Qwen: System 2 慢思考推理架构
 
 [![Model Size](https://img.shields.io/badge/Model-0.6B-blue?style=flat-square&logo=alibabacloud)](#)
 [![Algorithm](https://img.shields.io/badge/RL-GRPO%20%7C%20MCTS-red?style=flat-square)](#)
