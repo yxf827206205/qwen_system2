@@ -8,7 +8,7 @@
 >
 > 查看详细训练数据:[![Weights & Biases](https://img.shields.io/badge/Tracked_by-W&B-orange?style=flat-square&logo=weightsandbiases)](https://wandb.ai/yxf827206205-shandong-university/cognitive-nano-qwen/reports/Cognitive-Nano-Qwen-System-2---VmlldzoxNjA0NDI4OQ)
 
-## 🌟 核心技术
+##  核心技术
 
 在传统的 Scaling Law 框架下，0.6B 模型往往被认为缺乏进行复杂多步逻辑推理的容量。本项目实现在小模型上实现多步推导：
 - **越级推理能力**：在完全依赖自身生成的代码沙箱反馈下，0.6B 模型在 GSM8K 测试集上实现了惊人的 **% Pass@1**。
@@ -17,7 +17,7 @@
 
 ---
 
-## 🏗️ 核心架构与训练流水线 
+##  核心架构与训练流水线 
 
 ### Phase 1 — SFT 工具学习
 **目标**：为基座模型注入元认知能力与严格的工具调用协议。
@@ -54,7 +54,7 @@
 
 ---
 
-# 🔬 核心点
+#  核心点
 
 
 - **极小模型 System-2 推理验证**：在不足 1B 参数的微型模型上，完整的“思考-执行-判别-搜索”闭环是完全可行的。
@@ -62,7 +62,7 @@
 - **推理算力换准确率范式**：在极小算力设备上复刻了 o1 模型的 Scaling Inference Compute 核心思想。
 ---
 
-# 📊 实验结果
+#  实验结果
 
 在 GSM8K（复杂小学数学文字题）标准测试集上的评测结果如下：
 
@@ -73,10 +73,9 @@
 | Cognitive-Nano-Qwen (GRPO) | 0.6B | Phase 2 | **63%** | - |
 | **Cognitive-Nano-Qwen (System 2)** | **0.6B** | **Phase 1~4** | - | **95.2%** |
 
-*注：Pass@4 指在 MCTS 生成的 4 条高置信度候选路径中，只要有一条最终答案正确即视为通过。*
 
 ---
 
-# 🧠 方法
+#  方法
 
 本项目以极低的算力成本（单卡 4090）重现了前沿推理模型的演进路径。
