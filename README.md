@@ -4,7 +4,9 @@
 [![Algorithm](https://img.shields.io/badge/RL-GRPO%20%7C%20MCTS-red?style=flat-square)](#)
 [![Weights & Biases](https://img.shields.io/badge/Tracked_by-W&B-orange?style=flat-square&logo=weightsandbiases)](https://wandb.ai/yxf827206205-shandong-university/cognitive-nano-qwen/reports/Cognitive-Nano-Qwen-System-2---VmlldzoxNjA0NDI4OQ)
 
-> **"Scaling inference compute, not just model parameters."** > 本项目致力于探索极小规模 LLM 的推理极限：基于仅 **0.6B参数**的 Qwen，从零构建 **System 2**推理架构。通过PRM、完全隔离的物理沙箱与MCTS的结合，让纳米级模型在数学推理任务上实现突破。
+> **Scaling inference compute, not just model parameters** > 项目致力于探索极小规模 LLM 的推理极限：基于仅 **0.6B参数**的 Qwen_Base，从零构建 **System 2**推理架构。通过PRM、完全隔离的物理沙箱与MCTS的结合，让纳米级模型在数学推理任务上实现突破。
+>
+> 查看详细训练数据:[![Weights & Biases](https://img.shields.io/badge/Tracked_by-W&B-orange?style=flat-square&logo=weightsandbiases)](https://wandb.ai/yxf827206205-shandong-university/cognitive-nano-qwen/reports/Cognitive-Nano-Qwen-System-2---VmlldzoxNjA0NDI4OQ)
 
 ## 🌟 核心技术
 

@@ -4,3 +4,4 @@ __pycache__/
 data/
 logs/
 sft/wandb/
+mcts_eval_results.json
