@@ -9,7 +9,7 @@ from peft import PeftModel
 # 必须使用合并后的全新基座！
 BASE_MODEL_PATH = "/root/autodl-tmp/models/Qwen3-0.6B-Base"
 LORA_PATH = "/root/autodl-tmp/checkpoints/qwen_grpo_tool_v1/final"
-MAX_TEST_SAMPLES = 100  # 先测 100 条看看效果
+MAX_TEST_SAMPLES = 200  # 先测 100 条看看效果
 
 def load_model_and_tokenizer():
     print("1. 加载 Tokenizer...")
@@ -34,10 +34,15 @@ def load_model_and_tokenizer():
     return model, tokenizer
 
 def execute_python_sandbox(code_str):
-    """一个极简的 Python 沙箱，用于执行模型生成的数学表达式"""
+    """一个注入了基础数学能力的 Python 沙箱"""
     try:
         clean_code = code_str.strip()
-        result = eval(clean_code, {"__builtins__": {}}, {})
+        # 允许基础计算，防止低级报错
+        safe_env = {
+            "math": math, "sum": sum, "max": max, 
+            "min": min, "abs": abs, "float": float, "int": int
+        }
+        result = eval(clean_code, {"__builtins__": {}}, safe_env)
         if isinstance(result, float):
             return f"{result:.4f}".rstrip('0').rstrip('.')
         return str(result)

@@ -1,9 +1,7 @@
 """
-train_value_head.py  —— Value Head 训练脚本（v3 稳定版）
+
 
 修复历史:
-  v1 原版: BCEWithLogitsLoss + 零初始化 → loss 卡在 0.69 不收敛
-  v2 修复: MSELoss + Xavier初始化 + Cosine调度 → loss 下降但单步震荡剧烈
   v3 本版: 加权采样平衡标签 + 降低lr + EMA监控 → 收敛更平滑
     1. WeightedRandomSampler: 平衡 4 个标签桶，解决高标签数据占 54% 导致的梯度抖动
     2. batch_size 8→16，learning_rate 5e-5→1e-5，梯度更稳

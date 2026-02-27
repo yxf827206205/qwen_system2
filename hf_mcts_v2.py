@@ -7,21 +7,27 @@ from typing import List, Optional, Tuple
 
 @dataclass
 class MCTSConfig:
-    num_simulations: int = 64
-    branching_factor: int = 3
-    max_depth: int = 40
-    c_puct: float = 1.414
+    num_simulations: int = 64         # 狂暴算力：探索 64 次
+    branching_factor: int = 3         # 每次发散 3 种思路
+    max_depth: int = 15               # 搜索深度控制在 15 步左右
+    c_puct: float = 2.0               # 🔥 提高探索因子，逼迫模型怀疑高分，多去看看旁边的分支
     expansion_temperature: float = 0.8
     expansion_top_k: int = 20
     min_chunk_tokens: int = 8
-    max_chunk_tokens: int = 80
+    max_chunk_tokens: int = 120       # 🔥 单步思考允许生成更长，足够写完一段完整的逻辑或代码
 
 
 def execute_python_sandbox(code_str):
-   
+    """
+    🔥 升级版沙箱：加入基础运算能力，防止连 sum() 都报错
+    """
     try:
         clean_code = code_str.strip()
-        result = eval(clean_code, {"__builtins__": {}}, {})
+        safe_env = {
+            "math": math, "sum": sum, "max": max, 
+            "min": min, "abs": abs, "float": float, "int": int
+        }
+        result = eval(clean_code, {"__builtins__": {}}, safe_env)
         result_str = f"{result:.4f}".rstrip('0').rstrip('.') if isinstance(result, float) else str(result)
         return result_str
     except Exception as e:
@@ -57,10 +63,14 @@ class MCTSNode:
         return self.total_value / self.visit_count if self.visit_count > 0 else 0.0
 
     def uct_score(self, c_puct: float) -> float:
+        parent_n = max(self.parent.visit_count if self.parent else 1, 1)
+        
         if self.visit_count == 0:
-            return float("inf")
-        parent_n = self.parent.visit_count if self.parent else 1
-        parent_n = max(parent_n, 1)
+            # 引入 AlphaGo 的 PUCT (Predictor + UCB) 思想
+            # 既然 _expand 时裁判已经给了 state_value，直接把它作为先验 Q 值
+            exploration = c_puct * math.sqrt(parent_n) / 1.0
+            return self.state_value + exploration
+            
         exploration = c_puct * math.sqrt(math.log(parent_n) / self.visit_count)
         return self.q_value + exploration
 
@@ -106,7 +116,7 @@ class HF_MCTS:
         root_logits = outputs[0][:, -1, :]
         root_val = torch.sigmoid(outputs[1]).item()
         
-        # 核心改进：根节点不再保存 KV Cache，彻底释放内存
+        # 根节点不保存 KV Cache
         root = MCTSNode(
             tokens=prompt_tokens, parent=None,
             past_key_values=None, last_logits=root_logits, state_value=root_val,
@@ -124,8 +134,6 @@ class HF_MCTS:
 
             reward = self._evaluate(eval_node, prompt_text)
             self._backpropagate(eval_node, reward)
-            
-            #  核心改进：无需再手动 prune_kv_caches，因为根本就没存
 
         best_response, best_score = self._extract_best_response(root, prompt_tokens, expected_answer)
         return best_response, best_score
@@ -151,8 +159,7 @@ class HF_MCTS:
             current_id = start_token_id
             child_tokens = list(node.tokens)
             
-            #核心改进：空间换时间，每次扩展时瞬间重算当前分支的 KV Cache！
-            # 这样保证了 100% 物理隔离，且再也不会出现 CUDA Out of Memory。
+            # 空间换时间，扩展时重算 KV Cache
             ids = torch.tensor([node.tokens], dtype=torch.long, device=self.device)
             out = self.model(ids, use_cache=True, return_value=True)
             current_pkv = out[2]
@@ -192,6 +199,7 @@ class HF_MCTS:
                 if step_count >= cfg.min_chunk_tokens and consecutive_newlines >= 2:
                     break
                 current_id = torch.argmax(next_logits, dim=-1).item()
+            
             child_text = self.tokenizer.decode(child_tokens, skip_special_tokens=False)
 
             if child_tokens and child_tokens[-1] == self.py_end_id:
@@ -214,7 +222,6 @@ class HF_MCTS:
                     child_tokens.extend(inject_tokens)
                     child_text += inject_text
 
-            # 核心改进：新生成的节点坚决不保存 current_pkv！
             child = MCTSNode(
                 tokens=child_tokens, parent=node,
                 past_key_values=None, 
@@ -228,32 +235,25 @@ class HF_MCTS:
         return new_children
 
     def _evaluate(self, node: MCTSNode, prompt_text: str) -> float:
+        """
+        🔥 彻底拆除作弊漏洞！100% 相信裁判大脑！
+        """
         generated_part = node.text_so_far[len(prompt_text):]
-
-        if node.is_terminal:
-            score = 0.0
-            if re.search(r'\\boxed\{[^}]+\}', generated_part):
-                score = max(score, 0.85)
-            if re.search(r'[Tt]he\s+(?:final\s+)?answer\s+is\s*[:\-]?\s*\$?[\d,]+', generated_part):
-                score = max(score, 0.90)
-                
-            if '<|output_start|>' not in generated_part:
-                score -= 0.6 
-                
-            if '<|output_start|>' in generated_part:
-                score = max(score, 0.6)
-            if '<|python_start|>' in generated_part:
-                score = max(score, 0.4)
-            return max(0.0, score)
-
         base = node.state_value
+        
+        # 1. 阈值熔断：垃圾思路直接判死刑，停止探索
+        if base < 0.15:
+            node.is_terminal = True
+            return 0.0
+
+        # 2. 如果是结尾节点，直接返回裁判的最终判决！绝不用正则表达式强加分数！
+        if node.is_terminal:
+            return base
+
+        # 3. 探索过程中的微小鼓励，防止数值过于枯燥
         bonus = 0.0
         if '<|output_start|>' in generated_part:
-            bonus += 0.05
-        if re.search(r'\\boxed\{', generated_part):
-            bonus += 0.10
-        if re.search(r'[Tt]he\s+(?:final\s+)?answer', generated_part):
-            bonus += 0.05
+            bonus += 0.02 
 
         return min(base + bonus, 1.0)
 
@@ -295,12 +295,14 @@ class HF_MCTS:
             has_tool = 1 if '<|output_start|>' in text else 0
             is_terminal = 1 if node.is_terminal else 0
             
+            # 有答案参考时，对的优先级最高
             if expected_answer is not None:
                 model_ans = _extract_ans(text)
                 is_correct = 1 if (model_ans == expected_answer) else 0
-                return (is_correct, has_tool, is_terminal, -node.depth, node.q_value)
+                return (is_correct, node.q_value, is_terminal, has_tool, -node.depth)
             
-            return (has_tool, is_terminal, node.q_value, -node.depth)
+            # 🔥 闭卷考试时：裁判的 q_value 具有最高统治力！
+            return (node.q_value, is_terminal, has_tool, -node.depth)
     
         best = max(all_leaves, key=_key)
         response_text = self.tokenizer.decode(
