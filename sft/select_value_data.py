@@ -1,9 +1,14 @@
 """
-select_value_data.py  —— Value Head 训练数据采集脚本（修复版）
+select_value_data.py  —— Value Head 训练数据采集脚本（Bug 修复版）
 
 修复点:
-  - 标签平滑: 线性 ratio → 平方根曲线，让早期 snapshot 的标签更分散
-  - 增加标签分布统计输出，方便验证数据质量
+  1. extract_final_answer: 
+     - 使用 re.findall 取最后一个匹配（而非 re.search 取第一个）
+     - 正则不再贪婪吃掉句号：[\d\.\-,]+ → 精确的数字/小数匹配
+     - 额外 strip 掉尾部句号和空格，彻底防御
+  2. 增加 pred vs expected 调试日志，出问题时能看到对比
+  3. 标签平滑: 平方根曲线（保留原逻辑）
+  4. 增加标签分布统计输出
 """
 
 import sys
@@ -31,14 +36,27 @@ import wandb
 # ──────────────────────────────────────────────────────────────────────────────
 
 def extract_final_answer(text: str):
-    m = re.search(r"\\boxed\{([^}]+)\}", text)
-    if m:
-        return m.group(1).replace(",", "").strip()
-    m = re.search(
-        r"[Tt]he\s+(?:final\s+)?answer\s+is\s*[:\-]?\s*\$?([\d\.\-,]+)", text
+    """
+    从生成文本里提取最终答案。
+
+    修复点：
+    1. 使用 findall 取 **最后一个** 匹配，避免 <think> 内部的中间答案干扰
+    2. 正则改为 [-\d,]+(?:\.\d+)? 精确匹配数字/小数，不贪婪吃句号
+    3. 结果 strip 掉尾部句号，彻底防御 "36." != "36" 的坑
+    """
+    # 优先匹配 \boxed{...}（取最后一个）
+    boxed_matches = re.findall(r"\\boxed\{([^}]+)\}", text)
+    if boxed_matches:
+        return boxed_matches[-1].replace(",", "").strip().rstrip(".")
+
+    # 其次匹配自然语言 "The final answer is ..."（取最后一个）
+    nl_matches = re.findall(
+        r"[Tt]he\s+(?:final\s+)?answer\s+is\s*[:\-]?\s*\$?([-\d,]+(?:\.\d+)?)",
+        text
     )
-    if m:
-        return m.group(1).replace(",", "").strip()
+    if nl_matches:
+        return nl_matches[-1].replace(",", "").strip().rstrip(".")
+
     return None
 
 
@@ -87,20 +105,13 @@ def slice_prefixes(full_text: str, prompt_text: str, n_snapshots: int) -> list:
 
 def smooth_label(label: float, ratio: float) -> float:
     """
-    修复版标签平滑：使用平方根曲线代替线性曲线。
-
-    原版:  label_smoothed = 0.5 + (label - 0.5) * ratio
-      → 早期 snapshot(ratio=0.25) 标签范围仅 [0.375, 0.625]，信号极弱
-
-    修复:  ratio_curved = ratio ** 0.5
-      → 早期 snapshot(ratio=0.25, curved=0.5) 标签范围变为 [0.25, 0.75]，
-        信号强度翻倍，模型能学到更有效的特征
+    标签平滑：使用平方根曲线。
 
     对应关系 (n_snapshots=4):
-      snapshot 1/4: ratio=0.25  线性→[0.375,0.625]  修复→[0.25,0.75]
-      snapshot 2/4: ratio=0.50  线性→[0.25,0.75]    修复→[0.146,0.854]
-      snapshot 3/4: ratio=0.75  线性→[0.125,0.875]  修复→[0.067,0.933]
-      snapshot 4/4: ratio=1.00  线性→[0.0,1.0]      修复→[0.0,1.0]
+      snapshot 1/4: ratio=0.25  → curved=0.50  正确:[0.25,0.75]
+      snapshot 2/4: ratio=0.50  → curved=0.71  正确:[0.146,0.854]
+      snapshot 3/4: ratio=0.75  → curved=0.87  正确:[0.067,0.933]
+      snapshot 4/4: ratio=1.00  → curved=1.00  正确:[0.0,1.0]
     """
     ratio_curved = ratio ** 0.5
     return round(0.5 + (label - 0.5) * ratio_curved, 4)
@@ -112,7 +123,7 @@ def smooth_label(label: float, ratio: float) -> float:
 
 def collect(args):
     print("=" * 60)
-    print(" Value Head 数据采集启动 (修复标签平滑版)")
+    print(" Value Head 数据采集启动 (Bug 修复版)")
     print("=" * 60)
 
     wandb.init(
@@ -168,12 +179,17 @@ def collect(args):
     # ── 5. 采集 ───────────────────────────────────────────────────
     records = []
     stats = {
-        "total_rollouts":  0,
+        "total_rollouts":   0,
         "correct_rollouts": 0,
-        "no_answer":       0,
-        "total_problems":  0,
-        "passed_problems": 0,
+        "no_answer":        0,
+        "mislabel_fixed":   0,   # 🔥 新增：统计因修复正则而改变判定的数量
+        "total_problems":   0,
+        "passed_problems":  0,
     }
+
+    # 🔥 调试：前 N 题打印 pred vs expected，方便验证修复效果
+    DEBUG_PRINT_N = 10
+    debug_count = 0
 
     print("\n4. 开始 Rollout + 切片...")
     for item in tqdm(raw, desc="采集中"):
@@ -195,6 +211,15 @@ def collect(args):
             full_text = prompt_text + rollout.text
 
             pred = extract_final_answer(full_text)
+
+            # 🔥 调试输出：前几题打印比对结果，验证修复是否生效
+            if debug_count < DEBUG_PRINT_N:
+                tqdm.write(
+                    f"  [Debug #{debug_count}] expected={repr(expected)}, "
+                    f"pred={repr(pred)}, correct={pred == expected if pred else False}"
+                )
+                debug_count += 1
+
             if pred is None:
                 stats["no_answer"] += 1
                 label = 0.0
@@ -209,7 +234,6 @@ def collect(args):
 
             for i, prefix_text in enumerate(prefixes):
                 ratio = (i + 1) / len(prefixes)
-                # 修复: 使用平方根曲线平滑，让早期 snapshot 信号更强
                 label_smoothed = smooth_label(label, ratio)
                 records.append({
                     "text":  prefix_text,
@@ -235,7 +259,6 @@ def collect(args):
     pass_1 = stats["correct_rollouts"] / max(stats["total_rollouts"], 1)
     pass_k = stats["passed_problems"]  / max(stats["total_problems"],  1)
 
-    # 标签分布统计
     all_labels = [r["label"] for r in records]
     label_dist = {
         "[0.0,0.25)":  sum(1 for l in all_labels if l < 0.25),
@@ -244,16 +267,30 @@ def collect(args):
         "[0.75,1.0]":  sum(1 for l in all_labels if l >= 0.75),
     }
 
+    # 🔥 新增：验证 terminal 样本的标签分布（正确 vs 错误）
+    terminal_labels = []
+    for rec in records:
+        text = rec["text"]
+        if "<|im_end|>" in text or "\\boxed{" in text:
+            terminal_labels.append(rec["label"])
+
+    terminal_correct = sum(1 for l in terminal_labels if l >= 0.9)
+    terminal_wrong   = sum(1 for l in terminal_labels if l <= 0.1)
+    terminal_ambig   = len(terminal_labels) - terminal_correct - terminal_wrong
+
     wandb.log({
-        "eval/pass@1":                   pass_1,
-        f"eval/pass@{args.rollouts_per_problem}": pass_k,
-        "eval/total_problems":           stats["total_problems"],
-        "eval/valid_rollouts":           stats["total_rollouts"] - stats["no_answer"],
-        "eval/no_answer_rate":           stats["no_answer"] / max(stats["total_rollouts"], 1),
-        "data/label_low":                label_dist["[0.0,0.25)"],
-        "data/label_mid_low":            label_dist["[0.25,0.5)"],
-        "data/label_mid_high":           label_dist["[0.5,0.75)"],
-        "data/label_high":               label_dist["[0.75,1.0]"],
+        "eval/pass@1":                              pass_1,
+        f"eval/pass@{args.rollouts_per_problem}":   pass_k,
+        "eval/total_problems":                      stats["total_problems"],
+        "eval/valid_rollouts":                      stats["total_rollouts"] - stats["no_answer"],
+        "eval/no_answer_rate":                      stats["no_answer"] / max(stats["total_rollouts"], 1),
+        "data/label_low":                           label_dist["[0.0,0.25)"],
+        "data/label_mid_low":                       label_dist["[0.25,0.5)"],
+        "data/label_mid_high":                      label_dist["[0.5,0.75)"],
+        "data/label_high":                          label_dist["[0.75,1.0]"],
+        "data/terminal_correct":                    terminal_correct,
+        "data/terminal_wrong":                      terminal_wrong,
+        "data/terminal_ambiguous":                  terminal_ambig,
     })
 
     print("\n" + "=" * 60)
@@ -264,6 +301,13 @@ def collect(args):
     print(f"  Pass@{args.rollouts_per_problem}:        {pass_k:.2%}")
     print(f"  标签分布:      {label_dist}")
     print(f"  Value 样本数:  {len(records)} 条")
+    print()
+    print(f"  [Terminal 质量验证]")
+    print(f"    terminal 正确样本 (label≥0.9): {terminal_correct}")
+    print(f"    terminal 错误样本 (label≤0.1): {terminal_wrong}")
+    print(f"    terminal 模糊样本 (中间值):     {terminal_ambig}  ← 应接近 0")
+    if terminal_ambig > (terminal_correct + terminal_wrong) * 0.05:
+        print(f"  ⚠️  警告：terminal 模糊样本比例过高，说明 extract_final_answer 仍有漏网")
     print(f"  已保存至:      {output_path}")
     print("=" * 60)
 
